@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>WebSimulation</title>
+</head>
+<body>
+    <header>
+        <h1>Web simulation</h1>
+    </header>
+    <div class="main-content">
+        <div>
+            <canvas id="simulationCanvas"></canvas>
+            <div class="metadata-group">
+                <p >FPS: <span id="fps-label">0</span></p>
+                <p >STEP: <span id="steps-label">0</span></p>
+                <p >ALIVE CELLS: <span id="alive-cells-label">0</span></p>
+            </div>
+        </div>
+        <aside class="right-panel">
+            <h2>Controls</h2>
+            <button id="toggleSimulation">Start</button>
+            <div class="control-group">
+                <label for="speedControl">Simulation Speed:</label>
+                <input type="range" id="speedControl" min="1" max="60" value="5">
+            </div>
+        </aside>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

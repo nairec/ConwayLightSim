@@ -1,0 +1,12 @@
+TOP PRIORITY:
+    - Infinite canvas
+    - Line interpolation
+MEDIUM PRIORITY:
+    - Web improvement {
+        - Title (header)
+        - Stilyze aside and buttons
+        - background (?)
+    }
+    - display coordinates and cell state
+LOW PRIORITY:
+    - pause when drawing
