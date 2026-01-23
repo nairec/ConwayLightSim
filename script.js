@@ -13,21 +13,21 @@ let lastTimestamp = 0;
 let isRunning = false;
 let mouseGridPos = { x: -1, y: -1 };
 let lastMouseGridPos = { x: -1, y: -1 };
+let camera = {x: 0, y: 0};
+let aliveCellsSet = new Set();
 let fps = parseInt(speedControl.value, 10);
 let interval = 1000 / fps;
 let aliveCells = 0;
 
-const canvasRows = 100;
-const canvasCols = 140;
-canvas.width = canvasCols;
-canvas.height = canvasRows;
 ctx.imageSmoothingEnabled = false; // Disable anti-aliasing
-const cellSize = canvasCols / canvasRows;
-console.log('Simulation initialized');
-console.log("Canvas size:", canvas.clientWidth, "x", canvas.clientHeight);
-
-const imgData = ctx.createImageData(canvas.width, canvas.height);
+const width = canvas.width;
+const height = canvas.height;
+const cellSize = 1;
+const imgData = ctx.createImageData(width, height);
 const data = imgData.data;
+
+console.log("width:", width);
+console.log("height:", height);
 
 toggleSimulationButton.addEventListener('click', () => {
     isRunning = !isRunning;
@@ -35,12 +35,12 @@ toggleSimulationButton.addEventListener('click', () => {
     fpsLabel.textContent = isRunning ? `${fps}` : '0';
 });
 
-// Tracking del mouse dentro del canvas
+// Mouse tracking inside the canvas
 canvas.addEventListener('mousemove', (event) => {
     const rect = canvas.getBoundingClientRect();
 
-    const scaleX = canvas.width / rect.width;   // ej. 140 / 1920
-    const scaleY = canvas.height / rect.height; // ej. 100 / 1080
+    const scaleX = width / rect.width;   // ej. 140 / 1920
+    const scaleY = height / rect.height; // ej. 100 / 1080
 
     const x = (event.clientX - rect.left) * scaleX;
     const y = (event.clientY - rect.top) * scaleY;
@@ -55,37 +55,39 @@ canvas.addEventListener('mousemove', (event) => {
     mouseGridPos.y = yCell;
 
     if (event.buttons === 1) { 
-        if (mouseGridPos.x >= 0 && mouseGridPos.y >= 0 &&
-            mouseGridPos.x < statesMatrix[0].length && mouseGridPos.y < statesMatrix.length) {
-                // Toggle cell state
-                if (statesMatrix[mouseGridPos.y][mouseGridPos.x] === 1) {
-                    statesMatrix[mouseGridPos.y][mouseGridPos.x] = 0;
-                    aliveCells--;
-                } else {
-                    statesMatrix[mouseGridPos.y][mouseGridPos.x] = 1;
-                    aliveCells++;
-                }
-                aliveCellsLabel.innerText = `${aliveCells}`;
-            }
-        
-    }
+        // Toggle cell state
+        if (isAlive(mouseGridPos.x, mouseGridPos.y)) {
+            aliveCellsSet.delete(`${mouseGridPos.x},${mouseGridPos.y}`);
+            aliveCells--;
+        } else {
+            aliveCellsSet.add(`${mouseGridPos.x},${mouseGridPos.y}`)
+            aliveCells++;
+        }
+        aliveCellsLabel.innerText = `${aliveCells}`;    
+    } 
 });
 
-canvas.addEventListener('mousedown', (event) => {
-    if (mouseGridPos.x >= 0 && mouseGridPos.y >= 0 &&
-        mouseGridPos.x < statesMatrix[0].length && mouseGridPos.y < statesMatrix.length) {
-            // Toggle cell state
-            if (statesMatrix[mouseGridPos.y][mouseGridPos.x] === 1) {
-                statesMatrix[mouseGridPos.y][mouseGridPos.x] = 0;
-                aliveCells--;
-            } else {
-                statesMatrix[mouseGridPos.y][mouseGridPos.x] = 1;
-                aliveCells++;
-            }
-            aliveCellsLabel.innerText = `${aliveCells}`;
-        }
+function isAlive(x, y) {
+    if (aliveCellsSet.has(`${x},${y}`)) {
+        return 1;
+    } else {
+        return 0;
     }
-);
+}
+
+canvas.addEventListener('mousedown', (event) => {
+    
+    console.log("click:", mouseGridPos.x);
+    if (isAlive(mouseGridPos.x, mouseGridPos.y)) {
+        aliveCellsSet.delete(`${mouseGridPos.x},${mouseGridPos.y}`);
+        aliveCells--;
+    } else {
+        aliveCellsSet.add(`${mouseGridPos.x},${mouseGridPos.y}`)
+        aliveCells++;
+    }
+    aliveCellsLabel.innerText = `${aliveCells}`;
+
+});
     
 canvas.addEventListener('mouseleave', () => {
     mouseGridPos.x = -1;
@@ -98,30 +100,24 @@ speedControl.addEventListener('input', () => {
     fpsLabel.textContent = isRunning ? `${fps}` : '0';
 });
 
-let statesMatrix = Array(canvasRows).fill().map(() => Array(canvasCols).fill(0));
-let nextMatrix = Array(canvasRows).fill().map(() => Array(canvasCols).fill(0));
-
-function countAliveNeighbors(matrix, x, y) {
+function countAliveNeighbors(x, y) {
     let count = 0;
     for (let dy = -1; dy <= 1; dy++) {
         for (let dx = -1; dx <= 1; dx++) {
             if (dx === 0 && dy === 0) continue; // Skip the cell itself
-            const newX = x + dx;
-            const newY = y + dy;
-            if (newX >= 0 && newX < matrix[0].length &&
-                newY >= 0 && newY < matrix.length) {
-                count += matrix[newY][newX];
-            }
+            count += isAlive(x+dx,y+dy);
         }
     }
     return count;
 }
 
-function drawFrame(matrix) {
-    for (let y = 0; y < matrix.length; y++) {
-        for (let x = 0; x < matrix[y].length; x++) {
-            const index = (y * canvasCols + x) * 4;
-            if (matrix[y][x] === 1) {
+function drawFrame() {
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const worldX = camera.x + x;
+            const worldY = camera.y + y;
+            const index = (y * width + x) * 4;
+            if (isAlive(worldX,worldY)) {
                 data[index]     = (x*2)%255+60;
                 data[index + 1] = 0; 
                 data[index + 2] = (y*2)%255+60;
@@ -136,48 +132,37 @@ function drawFrame(matrix) {
     }
 
     ctx.putImageData(imgData, 0, 0);
-
-    // Highlight cell under mouse
-    if (mouseGridPos.x >= 0 && mouseGridPos.y >= 0 &&
-        mouseGridPos.x < matrix[0].length && mouseGridPos.y < matrix.length) {
-        ctx.strokeStyle = 'yellow';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(mouseGridPos.x * cellSize, mouseGridPos.y * cellSize, cellSize, cellSize);
-    }
 }
 async function simLoop() {
 
     // Birth: 3 neighbors alive
     // Death: less than 2 or more than 3 neighbors alive
     // Survival: 2 or 3 neighbors alive
-
-    let aliveNeighbors;
-
-    for (let y = 0; y < statesMatrix.length; y++) {
-        for (let x = 0; x < statesMatrix[y].length; x++) {
-            aliveNeighbors = countAliveNeighbors(statesMatrix, x, y);
-            if (statesMatrix[y][x] === 0) {
-                if (aliveNeighbors === 3) {
-                    nextMatrix[y][x] = 1; // Birth
-                    aliveCells++;
-                }
-            };
-            if (statesMatrix[y][x] === 1) {
-                if (aliveNeighbors < 2 || aliveNeighbors > 3) {
-                    nextMatrix[y][x] = 0; // Death
-                    aliveCells--;
-                } else {
-                    nextMatrix[y][x] = 1; // Survival
-                };
+    const newAliveCellsSet = new Set();
+    const influenceMap = new Map();
+    for (const cell of aliveCellsSet) {
+        const cellX = parseInt(cell.split(",")[0]);
+        const cellY = parseInt(cell.split(",")[1]);
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue; // Skip the cell itself
+                const value = influenceMap.get(`${cellX+dx},${cellY+dy}`) || 0;
+                influenceMap.set(`${cellX+dx},${cellY+dy}`, value + 1);
             }
         }
     }
-    statesMatrix.forEach((row, y) => {
-        row.forEach((cell, x) => {
-            statesMatrix[y][x] = nextMatrix[y][x];
-            nextMatrix[y][x] = 0; // reset nextMatrix for the next iteration
-        });
-    });
+    for (const [coords, neighbours] of influenceMap) {
+        const cellX = parseInt(coords.split(",")[0]);
+        const cellY = parseInt(coords.split(",")[1]);
+        console.log(`${coords}: ${neighbours}`);
+        if (neighbours === 3) {
+            newAliveCellsSet.add(`${cellX},${cellY}`);
+        } else if (neighbours === 2 && aliveCellsSet.has(`${cellX},${cellY}`)){
+            newAliveCellsSet.add(`${cellX},${cellY}`);
+        }
+    }
+    aliveCellsSet = newAliveCellsSet;
+    aliveCells = newAliveCellsSet.size;
 }
 
 async function mainLoop(timestamp) {
@@ -190,7 +175,7 @@ async function mainLoop(timestamp) {
         stepsLabel.innerText = `${step}`;
         aliveCellsLabel.innerText = `${aliveCells}`;
     }
-    drawFrame(statesMatrix);
+    drawFrame();
 
     animationId = requestAnimationFrame(mainLoop);
 }
