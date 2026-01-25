@@ -1,6 +1,5 @@
 TOP PRIORITY:
     - Optimize drawing algorithm
-    - Full-viewport canvas, floating info
 MEDIUM PRIORITY:
     - Line interpolation
 

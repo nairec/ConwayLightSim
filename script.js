@@ -201,9 +201,9 @@ function drawFrame() {
             const worldY = Math.floor(camera.y + y);
             const index = (y * width + x) * 4;
             if (isAlive(worldX,worldY)) {
-                data[index]     = Math.floor(127.5 * (1+ Math.sin(y*0.01+0)));
-                data[index + 1] = Math.floor(127.5 * (1+ Math.sin(x*0.01+2))); 
-                data[index + 2] = Math.floor(127.5 * (1+ Math.sin(x*0.01+4)));
+                data[index]     = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+0)));
+                data[index + 1] = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+2))); 
+                data[index + 2] = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+4)));
                 data[index + 3] = 255; 
             } else {
                 data[index]     = 0;

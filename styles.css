@@ -3,60 +3,63 @@ body {
     background: radial-gradient(circle,rgba(27, 27, 27, 1) 1%, rgba(0, 42, 71, 1) 100%);
 }
 
-header {
-    text-align: center;
-    color: #f0f0f0;
-    margin: 0;
-    padding-top: 1rem;
+#simulationCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    border: none;
+    background-color: #1a1a1a;
+    width: 100vw;    
+    height: 100vh;
+    image-rendering: pixelated; 
+    z-index: 0;
 }
 
-
-#simulationCanvas {
-    border: 2px solid #f0f0f0;
-    background-color: #1a1a1a;
-    width: 80vw;    
-    height: 80vh;
-    image-rendering: pixelated; 
+.UI {
+    z-index: 10;
+    pointer-events: none;
 }
 
 .right-panel {
     display: flex;
     flex-direction: column;
-    background-color: rgb(0, 15, 34);
-    -webkit-backdrop-filter: blur(1px);
-    backdrop-filter: blur(1px);
+    position: fixed;
+    top: 5rem;
+    right: 1rem;
+    background-color: rgba(0, 15, 34, 0.541);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
     color: #f0f0f0;
     padding: 15px;
     border-radius: 8px;
-    width: 200px;
+    width: 12rem;
     height: fit-content;
     justify-content: center;
     align-items: center;
     gap: 2rem;
-    margin-top: 3.5rem;
 }
 
 .control-group {
     display: flex;
     flex-direction: column;
     align-items: center;
+    pointer-events: auto;
 }   
 
 .metadata-group {
-    color: #d3b349;
-    font-size: 1.2rem;
+    color: #fde8a0;
+    font-size: 1rem;
     text-align: center;
     display: flex;
     gap: 2rem;
+    text-shadow: 0 0 5px black, 
+             0 0 10px black, 
+             0 0 15px black;
 }
 
 .main-content {
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 2rem;
-    padding: 0px 20px 20px 20px;
-    margin-top: -2rem;
+    padding-left: 1rem;
 }
 
 #toggleSimulation {
@@ -68,6 +71,7 @@ header {
     display: flex;
     justify-content: center;
     align-items: center;
+    pointer-events: auto;
 }
 
 .toggleIcon {
@@ -96,12 +100,72 @@ footer {
     align-items: center;
     justify-content: start;
     color: #ecf9fa;
-    background-color: rgb(0, 15, 34);
-    -webkit-backdrop-filter: blur(1px);
-    backdrop-filter: blur(1px);
-    padding: 10px;
-    border-radius: 15px;
     width: 90%;
-    justify-self: center;
     padding: 20px 20px 20px 30px;
+    position: absolute;
+    bottom: 1rem;
+    pointer-events: none;
 }
+
+.footer-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(0, 15, 34, 0.541);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    width: fit-content;
+    height: auto;
+    padding: 20px 20px 20px 20px;
+    border-radius: 10px;
+    gap: 10px;
+}
+
+.link-icons {
+    display: flex;
+    gap: 10px;
+}
+
+.link-icon {
+    pointer-events: auto;
+    transition: 0.5s all ease;
+    width: 30px;
+    height: 30px;
+    scale: 1.2;
+}   
+
+.link-icon:hover {
+    cursor: pointer;
+    transition: 0.5s all ease;
+    scale: 1.4;
+}
+
+#git-logo {
+    color: rgb(52, 33, 77);
+}
+
+#git-logo:hover {
+    color: rgb(92, 49, 148);
+}
+
+#linkedIn-logo {
+    color: rgb(30, 44, 75);
+}
+
+#linkedIn-logo:hover {
+    color: rgb(48, 75, 133);
+}
+
+#twitter-logo {
+    color: rgb(182, 182, 182);
+}
+
+#twitter-logo:hover {
+    color: rgb(219, 219, 219);
+}
+
+#web-link {
+    pointer-events: auto;
+    
+}
+
