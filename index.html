@@ -4,19 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>WebSimulation</title>
+    <title>LightConway</title>
 </head>
 <body>
     <header>
-        <h1>Web simulation</h1>
+        <h1>LightConway Sim</h1>
     </header>
     <div class="main-content">
-        <div>
-            <canvas id="simulationCanvas"></canvas>
+        <div class="container">
             <div class="metadata-group">
-                <p >FPS: <span id="fps-label">0</span></p>
-                <p >STEP: <span id="steps-label">0</span></p>
-                <p >ALIVE CELLS: <span id="alive-cells-label">0</span></p>
+                <p>Coordinates: <span id="coordinates-label">-</span></p>
+                <p>Zoom: <span id="zoom-label">1x</span></p>
+                <p>State: <span id="state-label">-</span></p>
+            </div>
+            <canvas id="simulationCanvas">
+                <p>fjdskj</p>
+            </canvas>
+            <div class="metadata-group">
+                <p>FPS: <span id="fps-label">0</span></p>
+                <p>STEP: <span id="steps-label">0</span></p>
+                <p>ALIVE CELLS: <span id="alive-cells-label">0</span></p>
             </div>
         </div>
         <aside class="right-panel">

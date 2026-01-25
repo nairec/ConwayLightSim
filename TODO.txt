@@ -1,7 +1,6 @@
 TOP PRIORITY:
-    - Infinite canvas
-    - Line interpolation
 MEDIUM PRIORITY:
+    - Line interpolation
     - Web improvement {
         - Title (header)
         - Stilyze aside and buttons
