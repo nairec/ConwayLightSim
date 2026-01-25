@@ -13,9 +13,8 @@
     <div class="main-content">
         <div class="container">
             <div class="metadata-group">
-                <p>Coordinates: <span id="coordinates-label">-</span></p>
+                <p><span id="coordinates-label">-</span> (<span id="state-label">-</span>)</p>
                 <p>Zoom: <span id="zoom-label">1x</span></p>
-                <p>State: <span id="state-label">-</span></p>
             </div>
             <canvas id="simulationCanvas">
                 <p>fjdskj</p>
@@ -28,13 +27,22 @@
         </div>
         <aside class="right-panel">
             <h2>Controls</h2>
-            <button id="toggleSimulation">Start</button>
+            <button id="toggleSimulation" class="paused">
+                <div class="toggleIcon"></div>
+            </button>
             <div class="control-group">
                 <label for="speedControl">Simulation Speed:</label>
                 <input type="range" id="speedControl" min="1" max="60" value="5">
+                <div class="checkbox-group">
+                    <label for="autoPauseEnableBtn">Pause when drawing:  </label>
+                    <input type="checkbox" id="autoPauseEnableBtn">
+                </div>
             </div>
         </aside>
     </div>
+    <footer>
+        <b>Made by &gt;Eric Garcia&lt;</b>
+    </footer>
     <script src="script.js"></script>
 </body>
 </html>

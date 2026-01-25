@@ -1,29 +1,30 @@
 body {
-    background-color: #2b2b2b;
-    overflow-y: hidden;
+    background: #1B1B1B;
+    background: radial-gradient(circle,rgba(27, 27, 27, 1) 1%, rgba(0, 42, 71, 1) 100%);
 }
 
 header {
     text-align: center;
     color: #f0f0f0;
+    margin: 0;
+    padding-top: 1rem;
 }
+
 
 #simulationCanvas {
     border: 2px solid #f0f0f0;
     background-color: #1a1a1a;
-    width: 100%;    
+    width: 80vw;    
     height: 80vh;
     image-rendering: pixelated; 
-}
-
-.container {
-    margin-top: -2rem;
 }
 
 .right-panel {
     display: flex;
     flex-direction: column;
-    background-color: #3a3a3a;
+    background-color: rgb(0, 15, 34);
+    -webkit-backdrop-filter: blur(1px);
+    backdrop-filter: blur(1px);
     color: #f0f0f0;
     padding: 15px;
     border-radius: 8px;
@@ -32,6 +33,7 @@ header {
     justify-content: center;
     align-items: center;
     gap: 2rem;
+    margin-top: 3.5rem;
 }
 
 .control-group {
@@ -52,7 +54,54 @@ header {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 10rem;
-    padding: 20px;
+    gap: 2rem;
+    padding: 0px 20px 20px 20px;
+    margin-top: -2rem;
 }
 
+#toggleSimulation {
+    width: 60px;
+    height: 60px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.toggleIcon {
+  box-sizing: border-box;
+  width: 0;
+  height: 30px;
+  border-color: transparent transparent transparent #fff;
+  transition: 0.2s all ease;
+  cursor: pointer;
+  border-style: solid;
+  border-width: 15px 0 15px 25px; /* Forma de Triángulo */
+}
+
+#toggleSimulation.playing .toggleIcon {
+    border-style: double;
+    border-width: 0px 0px 0px 25px;
+}
+
+.checkbox-group {
+    display: flex;
+    margin-top: 10px;
+}
+
+footer {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    color: #ecf9fa;
+    background-color: rgb(0, 15, 34);
+    -webkit-backdrop-filter: blur(1px);
+    backdrop-filter: blur(1px);
+    padding: 10px;
+    border-radius: 15px;
+    width: 90%;
+    justify-self: center;
+    padding: 20px 20px 20px 30px;
+}

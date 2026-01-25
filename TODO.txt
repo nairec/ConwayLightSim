@@ -1,11 +1,7 @@
 TOP PRIORITY:
+    - Optimize drawing algorithm
+    - Full-viewport canvas, floating info
 MEDIUM PRIORITY:
     - Line interpolation
-    - Web improvement {
-        - Title (header)
-        - Stilyze aside and buttons
-        - background (?)
-    }
-    - display coordinates and cell state
+
 LOW PRIORITY:
-    - pause when drawing

@@ -1,6 +1,7 @@
 const canvas = document.getElementById('simulationCanvas');
 const toggleSimulationButton = document.getElementById('toggleSimulation');
 const speedControl = document.getElementById('speedControl');
+const autoPauseChck = document.getElementById('autoPauseEnableBtn')
 const fpsLabel = document.getElementById('fps-label');
 const stepsLabel = document.getElementById('steps-label');
 const aliveCellsLabel = document.getElementById('alive-cells-label');
@@ -16,6 +17,7 @@ let zoomFactor = 1;
 
 let isRunning = false;
 let isSwiping = false;
+let autoPauseEnabled = false;
 
 let mouseGridPos = { x: -1, y: -1 };
 let firstSwipePos = { x: -1, y: -1 };
@@ -40,22 +42,37 @@ let data = imgData.data;
 
 toggleSimulationButton.addEventListener('click', () => {
     isRunning = !isRunning;
-    toggleSimulationButton.textContent = isRunning ? 'Pause' : 'Start';
+    toggleSimulationButton.classList.toggle("playing", isRunning);
+    
     fpsLabel.textContent = isRunning ? `${fps}` : '0';
 });
+
+speedControl.addEventListener('input', () => {
+    fps = parseInt(speedControl.value, 10);
+    interval = 1000 / fps;
+    fpsLabel.textContent = isRunning ? `${fps}` : '0';
+});
+
+autoPauseChck.addEventListener('change', () => {
+    autoPauseEnabled = autoPauseChck.checked;
+})
 
 window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowUp') camera.y -= 2;
     if (e.key === 'ArrowDown') camera.y += 2;
     if (e.key === 'ArrowRight') camera.x += 2;
     if (e.key === 'ArrowLeft') camera.x -= 2;
+    if (e.key === ' ') toggleSimulationButton.click();
 })
 
 canvas.addEventListener('contextmenu', (e) => {
-  e.preventDefault();
+    e.preventDefault();
 });
 
 canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     const rect = canvas.getBoundingClientRect();
     let scaleX = width / rect.width;  
     let scaleY = height / rect.height;
@@ -65,7 +82,7 @@ canvas.addEventListener('wheel', (e) => {
     const worldY = camera.y + (e.clientY - rect.top) * scaleY;
 
     zoomFactor *= (1 + e.deltaY * -0.0005);
-    zoomFactor = Math.min(Math.max(0.4, zoomFactor), 4);
+    zoomFactor = Math.min(Math.max(0.2, zoomFactor), 4);
 
     canvas.width = Math.floor(originalWidth / zoomFactor);
     canvas.height = Math.floor(originalHeight / zoomFactor);
@@ -105,7 +122,8 @@ canvas.addEventListener('mousemove', (e) => {
             aliveCellsSet.add(`${mouseGridPos.x},${mouseGridPos.y}`)
             aliveCells++;
         }
-        aliveCellsLabel.innerText = `${aliveCells}`;    
+        aliveCellsLabel.innerText = `${aliveCells}`;  
+        if (autoPauseEnabled) pauseSim();  
     } 
 
     if (isSwiping) {
@@ -118,18 +136,9 @@ canvas.addEventListener('mousemove', (e) => {
 
 });
 
-function isAlive(x, y) {
-    if (aliveCellsSet.has(`${x},${y}`)) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
 canvas.addEventListener('mousedown', (event) => {
     
     if (event.button === 0) {
-        console.log("click:", mouseGridPos.x);
         if (isAlive(mouseGridPos.x, mouseGridPos.y)) {
             aliveCellsSet.delete(`${mouseGridPos.x},${mouseGridPos.y}`);
             aliveCells--;
@@ -138,32 +147,41 @@ canvas.addEventListener('mousedown', (event) => {
             aliveCells++;
         }
         aliveCellsLabel.innerText = `${aliveCells}`;
-            stateLabel.innerText = aliveCellsSet.has(`${mouseGridPos.x},${mouseGridPos.y}`) ? 'alive' : 'dead';
+        stateLabel.innerText = aliveCellsSet.has(`${mouseGridPos.x},${mouseGridPos.y}`) ? 'alive' : 'dead';
+        if (autoPauseEnabled) pauseSim();
     }
     if (event.button === 2) {
         isSwiping = true;
         firstSwipePos.x = mouseGridPos.x;
         firstSwipePos.y = mouseGridPos.y;
     }
-
-});
     
+});
+
 canvas.addEventListener('mouseleave', () => {
     mouseGridPos.x = -1;
     mouseGridPos.y = -1;
     isSwiping = false;
-    coordLabel.innerText = `-`;
+    coordLabel.innerText = '-';
+    stateLabel.innerHTML = '-';
 });
 
 canvas.addEventListener('mouseup', () => {
     isSwiping = false;
 })
-    
-speedControl.addEventListener('input', () => {
-    fps = parseInt(speedControl.value, 10);
-    interval = 1000 / fps;
-    fpsLabel.textContent = isRunning ? `${fps}` : '0';
-});
+
+function pauseSim() {
+    isRunning = false;
+    toggleSimulationButton.classList.toggle("playing", isRunning);
+}
+
+function isAlive(x, y) {
+    if (aliveCellsSet.has(`${x},${y}`)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
 
 function countAliveNeighbors(x, y) {
     let count = 0;
@@ -220,7 +238,6 @@ async function simLoop() {
     for (const [coords, neighbours] of influenceMap) {
         const cellX = parseInt(coords.split(",")[0]);
         const cellY = parseInt(coords.split(",")[1]);
-        console.log(`${coords}: ${neighbours}`);
         if (neighbours === 3) {
             newAliveCellsSet.add(`${cellX},${cellY}`);
         } else if (neighbours === 2 && aliveCellsSet.has(`${cellX},${cellY}`)){
