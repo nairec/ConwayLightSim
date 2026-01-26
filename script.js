@@ -273,7 +273,15 @@ function drawFrame() {
                 data[index + 3] = 255; 
             }
         }
+        
     }
+    const mouseX = Math.floor(mouseGridPos.x - camera.x);
+    const mouseY = Math.floor(mouseGridPos.y - camera.y);
+    const index = (mouseY * width + mouseX) * 4;
+    data[index]     =  data[index + 2] + 50;
+    data[index + 1] =  data[index + 2] + 50;
+    data[index + 2] =  data[index + 2] + 50;
+    data[index + 3] = 255;
     ctx.putImageData(imgData, 0, 0);
 }
 
