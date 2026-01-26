@@ -23,7 +23,7 @@ let mouseGridPos = { x: -1, y: -1 };
 let firstSwipePos = { x: -1, y: -1 };
 let camera = {x: 0, y: 0};
 
-let aliveCellsSet = new Set();
+let aliveCellsMap = new Map();
 let fps = parseInt(speedControl.value, 10);
 let interval = 1000 / fps;
 let aliveCells = 0;
@@ -82,7 +82,7 @@ canvas.addEventListener('wheel', (e) => {
     const worldY = camera.y + (e.clientY - rect.top) * scaleY;
 
     zoomFactor *= (1 + e.deltaY * -0.0005);
-    zoomFactor = Math.min(Math.max(0.2, zoomFactor), 4);
+    zoomFactor = Math.min(Math.max(0.05, zoomFactor), 4);
 
     canvas.width = Math.floor(originalWidth / zoomFactor);
     canvas.height = Math.floor(originalHeight / zoomFactor);
@@ -116,10 +116,10 @@ canvas.addEventListener('mousemove', (e) => {
     if (e.buttons === 1) { 
         // Toggle cell state
         if (isAlive(mouseGridPos.x, mouseGridPos.y)) {
-            aliveCellsSet.delete(`${mouseGridPos.x},${mouseGridPos.y}`);
+            aliveCellsMap.delete(`${mouseGridPos.x},${mouseGridPos.y}`);
             aliveCells--;
         } else {
-            aliveCellsSet.add(`${mouseGridPos.x},${mouseGridPos.y}`)
+            aliveCellsMap.set(`${mouseGridPos.x},${mouseGridPos.y}`, {x: mouseGridPos.x, y: mouseGridPos.y})
             aliveCells++;
         }
         aliveCellsLabel.innerText = `${aliveCells}`;  
@@ -132,7 +132,7 @@ canvas.addEventListener('mousemove', (e) => {
     }
 
     coordLabel.innerText = `${mouseGridPos.x}, ${mouseGridPos.y}`;
-    stateLabel.innerText = aliveCellsSet.has(`${mouseGridPos.x},${mouseGridPos.y}`) ? 'alive' : 'dead';
+    stateLabel.innerText = aliveCellsMap.has(`${mouseGridPos.x},${mouseGridPos.y}`) ? 'alive' : 'dead';
 
 });
 
@@ -140,14 +140,14 @@ canvas.addEventListener('mousedown', (event) => {
     
     if (event.button === 0) {
         if (isAlive(mouseGridPos.x, mouseGridPos.y)) {
-            aliveCellsSet.delete(`${mouseGridPos.x},${mouseGridPos.y}`);
+            aliveCellsMap.delete(`${mouseGridPos.x},${mouseGridPos.y}`);
             aliveCells--;
         } else {
-            aliveCellsSet.add(`${mouseGridPos.x},${mouseGridPos.y}`)
+            aliveCellsMap.set(`${mouseGridPos.x},${mouseGridPos.y}`, {x: mouseGridPos.x, y: mouseGridPos.y})
             aliveCells++;
         }
         aliveCellsLabel.innerText = `${aliveCells}`;
-        stateLabel.innerText = aliveCellsSet.has(`${mouseGridPos.x},${mouseGridPos.y}`) ? 'alive' : 'dead';
+        stateLabel.innerText = aliveCellsMap.has(`${mouseGridPos.x},${mouseGridPos.y}`) ? 'alive' : 'dead';
         if (autoPauseEnabled) pauseSim();
     }
     if (event.button === 2) {
@@ -176,7 +176,7 @@ function pauseSim() {
 }
 
 function isAlive(x, y) {
-    if (aliveCellsSet.has(`${x},${y}`)) {
+    if (aliveCellsMap.has(`${x},${y}`)) {
         return 1;
     } else {
         return 0;
@@ -195,25 +195,20 @@ function countAliveNeighbors(x, y) {
 }
 
 function drawFrame() {
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const worldX = Math.floor(camera.x + x);
-            const worldY = Math.floor(camera.y + y);
+    data.fill(0);
+    for (const [coords, values] of aliveCellsMap) {
+        const worldX = values.x;
+        const worldY = values.y;
+        const x = Math.floor(worldX - camera.x);
+        const y = Math.floor(worldY - camera.y);
+        if (x >= 0 && x < width && y >= 0 && y < height) {
             const index = (y * width + x) * 4;
-            if (isAlive(worldX,worldY)) {
-                data[index]     = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+0)));
-                data[index + 1] = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+2))); 
-                data[index + 2] = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+4)));
-                data[index + 3] = 255; 
-            } else {
-                data[index]     = 0;
-                data[index + 1] = 0; 
-                data[index + 2] = 0;
-                data[index + 3] = 255; 
-            }
+            data[index]     = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+0)));
+            data[index + 1] = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+2))); 
+            data[index + 2] = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+4)));
+            data[index + 3] = 255; 
         }
     }
-
     ctx.putImageData(imgData, 0, 0);
 }
 
@@ -222,30 +217,35 @@ async function simLoop() {
     // Birth: 3 neighbors alive
     // Death: less than 2 or more than 3 neighbors alive
     // Survival: 2 or 3 neighbors alive
-    const newAliveCellsSet = new Set();
+    const newaliveCellsMap = new Map();
     const influenceMap = new Map();
-    for (const cell of aliveCellsSet) {
-        const cellX = parseInt(cell.split(",")[0]);
-        const cellY = parseInt(cell.split(",")[1]);
+    for (const [coordinates, values] of aliveCellsMap) {
+        const cellX = values.x;
+        const cellY = values.y;
         for (let dy = -1; dy <= 1; dy++) {
             for (let dx = -1; dx <= 1; dx++) {
                 if (dx === 0 && dy === 0) continue; // Skip the cell itself
-                const value = influenceMap.get(`${cellX+dx},${cellY+dy}`) || 0;
-                influenceMap.set(`${cellX+dx},${cellY+dy}`, value + 1);
+                const nx = cellX + dx;
+                const ny = cellY + dy;
+                const neighborKey = `${nx},${ny}`
+
+                const neighbors = influenceMap.get(neighborKey) || 0;
+                influenceMap.set(neighborKey, neighbors + 1);
             }
         }
     }
-    for (const [coords, neighbours] of influenceMap) {
-        const cellX = parseInt(coords.split(",")[0]);
-        const cellY = parseInt(coords.split(",")[1]);
-        if (neighbours === 3) {
-            newAliveCellsSet.add(`${cellX},${cellY}`);
-        } else if (neighbours === 2 && aliveCellsSet.has(`${cellX},${cellY}`)){
-            newAliveCellsSet.add(`${cellX},${cellY}`);
+    for (const [coords, neighbors] of influenceMap) {
+        if (neighbors === 3) {
+            const parts = coords.split(','); 
+            const x = parseInt(parts[0]);
+            const y = parseInt(parts[1]);
+            newaliveCellsMap.set(coords, {x: x, y: y});
+        } else if (neighbors === 2 && aliveCellsMap.has(coords)){
+            newaliveCellsMap.set(coords, aliveCellsMap.get(coords));
         }
     }
-    aliveCellsSet = newAliveCellsSet;
-    aliveCells = newAliveCellsSet.size;
+    aliveCellsMap = newaliveCellsMap;
+    aliveCells = newaliveCellsMap.size;
 }
 
 async function mainLoop(timestamp) {

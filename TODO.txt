@@ -1,5 +1,4 @@
 TOP PRIORITY:
-    - Optimize drawing algorithm
 MEDIUM PRIORITY:
     - Line interpolation
 
