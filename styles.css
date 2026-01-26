@@ -1,6 +1,5 @@
 body {
-    background: #1B1B1B;
-    background: radial-gradient(circle,rgba(27, 27, 27, 1) 1%, rgba(0, 42, 71, 1) 100%);
+    background: #000000;
 }
 
 #simulationCanvas {
@@ -8,11 +7,12 @@ body {
     top: 0;
     left: 0;
     border: none;
-    background-color: #000000;
+    background-color: transparent;
     width: 100vw;    
     height: 100vh;
     image-rendering: pixelated; 
     z-index: 0;
+    transition: all 0.2s ease-in-out;
 }
 
 .UI {
@@ -92,6 +92,7 @@ body {
 
 .checkbox-group {
     display: flex;
+    flex-direction: column;
     margin-top: 10px;
 }
 

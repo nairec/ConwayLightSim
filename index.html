@@ -10,7 +10,7 @@
     <div class="main-content">
         <div class="UI">
             <div class="metadata-group">
-                <p><span id="coordinates-label">-</span> (<span id="state-label">-</span>)</p>
+                <p><span id="coordinates-label">-</span> (<span id="state-label">-</span>) | age: <span id="age-label">-</span></p>
                 <p>Zoom: <span id="zoom-label">1x</span></p>
             </div>
             <div class="metadata-group">
@@ -27,8 +27,22 @@
                     <label for="speedControl">Simulation Speed:</label>
                     <input type="range" id="speedControl" min="1" max="60" value="5">
                     <div class="checkbox-group">
-                        <label for="autoPauseEnableBtn">Pause when drawing:  </label>
-                        <input type="checkbox" id="autoPauseEnableBtn">
+                        <div>
+                            <label for="autoPauseEnableBtn">Pause when drawing:  </label>
+                            <input type="checkbox" id="autoPauseEnableBtn">
+                        </div>
+                        <div>
+                            <label for="linearInterpolationEnableBtn">Linear interpolation:  </label>
+                            <input type="checkbox" id="linearInterpolationEnableBtn" checked>
+                        </div>
+                        <div>
+                            <label for="cellGlowEnableBtn">Cell glow:  </label>
+                            <input type="checkbox" id="cellGlowEnableBtn">
+                        </div>
+                        <div>
+                            <label for="ageHeatmapEnableBtn">Age heatmap:  </label>
+                            <input type="checkbox" id="ageHeatmapEnableBtn">
+                        </div>
                     </div>
                 </div>
             </aside>

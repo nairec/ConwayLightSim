@@ -1,14 +1,20 @@
 const canvas = document.getElementById('simulationCanvas');
+const ctx = canvas.getContext('2d');
+
 const toggleSimulationButton = document.getElementById('toggleSimulation');
 const speedControl = document.getElementById('speedControl');
-const autoPauseChck = document.getElementById('autoPauseEnableBtn')
+const autoPauseChck = document.getElementById('autoPauseEnableBtn');
+const linearInterpolationChck = document.getElementById('linearInterpolationEnableBtn');
+const cellGlowChck = document.getElementById('cellGlowEnableBtn');
+const ageHeatmapChck = document.getElementById('ageHeatmapEnableBtn');
+
 const fpsLabel = document.getElementById('fps-label');
 const stepsLabel = document.getElementById('steps-label');
 const aliveCellsLabel = document.getElementById('alive-cells-label');
 const coordLabel = document.getElementById('coordinates-label');
 const zoomLabel = document.getElementById('zoom-label');
 const stateLabel = document.getElementById('state-label');
-const ctx = canvas.getContext('2d');
+const ageLabel = document.getElementById('age-label');
 
 let animationId;
 let step = 0;
@@ -18,8 +24,11 @@ let zoomFactor = 1;
 let isRunning = false;
 let isSwiping = false;
 let autoPauseEnabled = false;
+let enableLinearInterpolation = true;
+let enableAgeHeatmap = false;
 
 let mouseGridPos = { x: -1, y: -1 };
+let lastMouseGridPos = { x: -1, y: -1 };
 let firstSwipePos = { x: -1, y: -1 };
 let camera = {x: 0, y: 0};
 
@@ -43,6 +52,7 @@ let data = imgData.data;
 toggleSimulationButton.addEventListener('click', () => {
     isRunning = !isRunning;
     toggleSimulationButton.classList.toggle("playing", isRunning);
+    toggleSimulationButton.blur();
     
     fpsLabel.textContent = isRunning ? `${fps}` : '0';
 });
@@ -55,7 +65,27 @@ speedControl.addEventListener('input', () => {
 
 autoPauseChck.addEventListener('change', () => {
     autoPauseEnabled = autoPauseChck.checked;
-})
+    autoPauseChck.blur();
+});
+
+linearInterpolationChck.addEventListener('change', () => {
+    enableLinearInterpolation = linearInterpolationChck.checked;
+    linearInterpolationChck.blur();
+});
+
+cellGlowChck.addEventListener('change', () => {
+    if (cellGlowChck.checked) {
+        canvas.style.filter = 'drop-shadow(0 0 2px cyan) contrast(1.2)';
+    } else {
+        canvas.style.filter = 'none';
+    }
+    cellGlowChck.blur();
+});
+
+ageHeatmapChck.addEventListener('change', () => {
+    enableAgeHeatmap = ageHeatmapChck.checked;
+    ageHeatmapChck.blur();
+});
 
 window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowUp') camera.y -= 2;
@@ -63,7 +93,7 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight') camera.x += 2;
     if (e.key === 'ArrowLeft') camera.x -= 2;
     if (e.key === ' ') toggleSimulationButton.click();
-})
+});
 
 canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
@@ -98,7 +128,7 @@ canvas.addEventListener('wheel', (e) => {
     camera.y = worldY - ((e.clientY - rect.top) * scaleY);
 
     zoomLabel.innerText = `${zoomFactor.toFixed(2)}x`
-})
+});
 
 // Mouse tracking inside the canvas
 canvas.addEventListener('mousemove', (e) => {
@@ -114,13 +144,32 @@ canvas.addEventListener('mousemove', (e) => {
     mouseGridPos.y = Math.floor(y + camera.y);
     
     if (e.buttons === 1) { 
-        // Toggle cell state
-        if (isAlive(mouseGridPos.x, mouseGridPos.y)) {
-            aliveCellsMap.delete(`${mouseGridPos.x},${mouseGridPos.y}`);
-            aliveCells--;
-        } else {
-            aliveCellsMap.set(`${mouseGridPos.x},${mouseGridPos.y}`, {x: mouseGridPos.x, y: mouseGridPos.y})
-            aliveCells++;
+        if (enableLinearInterpolation) {
+            const rangeX = Math.abs(mouseGridPos.x - lastMouseGridPos.x);
+            const rangeY = Math.abs(mouseGridPos.y - lastMouseGridPos.y);
+            const steps = Math.max(rangeX, rangeY);
+            if (steps > 0) {
+                for (let i = 1; i <= steps; i++) {  
+                    const x = lastMouseGridPos.x + (mouseGridPos.x - lastMouseGridPos.x) * i / steps;
+                    const y = lastMouseGridPos.y + (mouseGridPos.y - lastMouseGridPos.y) * i / steps;
+                    if (isAlive(x, y)) {
+                        aliveCellsMap.delete(`${x},${y}`);
+                        aliveCells--;
+                    } else {
+                        aliveCellsMap.set(`${x},${y}`, {x: x, y: y, age: 0});
+                        aliveCells++;
+                    }
+                }
+            }
+        }
+        else {
+            if (isAlive(mouseGridPos.x, mouseGridPos.y)) {
+                aliveCellsMap.delete(`${mouseGridPos.x},${mouseGridPos.y}`);
+                aliveCells--;
+            } else {
+                aliveCellsMap.set(`${mouseGridPos.x},${mouseGridPos.y}`, {x: mouseGridPos.x, y: mouseGridPos.y, age: 0});
+                aliveCells++;
+            }
         }
         aliveCellsLabel.innerText = `${aliveCells}`;  
         if (autoPauseEnabled) pauseSim();  
@@ -131,8 +180,13 @@ canvas.addEventListener('mousemove', (e) => {
         camera.y -= (mouseGridPos.y - firstSwipePos.y);
     }
 
+    lastMouseGridPos.x = mouseGridPos.x;
+    lastMouseGridPos.y = mouseGridPos.y;
+
     coordLabel.innerText = `${mouseGridPos.x}, ${mouseGridPos.y}`;
-    stateLabel.innerText = aliveCellsMap.has(`${mouseGridPos.x},${mouseGridPos.y}`) ? 'alive' : 'dead';
+    const cellAlive = aliveCellsMap.has(`${mouseGridPos.x},${mouseGridPos.y}`);
+    stateLabel.innerText = cellAlive ? 'alive' : 'dead';
+    ageLabel.innerText = cellAlive ? `${aliveCellsMap.get(`${mouseGridPos.x},${mouseGridPos.y}`).age}` : '-';
 
 });
 
@@ -143,11 +197,13 @@ canvas.addEventListener('mousedown', (event) => {
             aliveCellsMap.delete(`${mouseGridPos.x},${mouseGridPos.y}`);
             aliveCells--;
         } else {
-            aliveCellsMap.set(`${mouseGridPos.x},${mouseGridPos.y}`, {x: mouseGridPos.x, y: mouseGridPos.y})
+            aliveCellsMap.set(`${mouseGridPos.x},${mouseGridPos.y}`, {x: mouseGridPos.x, y: mouseGridPos.y, age: 0});
             aliveCells++;
         }
         aliveCellsLabel.innerText = `${aliveCells}`;
-        stateLabel.innerText = aliveCellsMap.has(`${mouseGridPos.x},${mouseGridPos.y}`) ? 'alive' : 'dead';
+        const cellAlive = aliveCellsMap.has(`${mouseGridPos.x},${mouseGridPos.y}`);
+        stateLabel.innerText = cellAlive ? 'alive' : 'dead';
+        ageLabel.innerText = cellAlive ? `${aliveCellsMap.get(`${mouseGridPos.x},${mouseGridPos.y}`).age}` : '-';
         if (autoPauseEnabled) pauseSim();
     }
     if (event.button === 2) {
@@ -164,11 +220,12 @@ canvas.addEventListener('mouseleave', () => {
     isSwiping = false;
     coordLabel.innerText = '-';
     stateLabel.innerHTML = '-';
+    ageLabel.innerText = '-';
 });
 
 canvas.addEventListener('mouseup', () => {
     isSwiping = false;
-})
+});
 
 function pauseSim() {
     isRunning = false;
@@ -203,10 +260,18 @@ function drawFrame() {
         const y = Math.floor(worldY - camera.y);
         if (x >= 0 && x < width && y >= 0 && y < height) {
             const index = (y * width + x) * 4;
-            data[index]     = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+0)));
-            data[index + 1] = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+2))); 
-            data[index + 2] = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+4)));
-            data[index + 3] = 255; 
+            if (enableAgeHeatmap) {
+                const age = values.age;
+                data[index]     = Math.min(255, (age * 5 / 2));     
+                data[index + 1] = Math.min(255, 255 - (age * 2 / 2)); 
+                data[index + 2] = Math.min(255, 255 - (age * 5 / 2));
+                data[index + 3] = 255;
+            } else {
+                data[index]     = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+0)));
+                data[index + 1] = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+2))); 
+                data[index + 2] = Math.floor(127.5 * (1+ Math.cos((x+y)*0.01+4)));
+                data[index + 3] = 255; 
+            }
         }
     }
     ctx.putImageData(imgData, 0, 0);
@@ -236,12 +301,15 @@ async function simLoop() {
     }
     for (const [coords, neighbors] of influenceMap) {
         if (neighbors === 3) {
+            // Birth
             const parts = coords.split(','); 
             const x = parseInt(parts[0]);
             const y = parseInt(parts[1]);
-            newaliveCellsMap.set(coords, {x: x, y: y});
+            newaliveCellsMap.set(coords, {x: x, y: y, age: 0});
         } else if (neighbors === 2 && aliveCellsMap.has(coords)){
-            newaliveCellsMap.set(coords, aliveCellsMap.get(coords));
+            // Survival
+            const oldCell = aliveCellsMap.get(coords);
+            newaliveCellsMap.set(coords, {...oldCell, age: oldCell.age + 1});
         }
     }
     aliveCellsMap = newaliveCellsMap;
