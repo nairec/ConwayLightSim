@@ -25,7 +25,7 @@
                 </button>
                 <div class="control-group">
                     <label for="speedControl">Simulation Speed:</label>
-                    <input type="range" id="speedControl" min="1" max="60" value="5">
+                    <input type="range" id="speedControl" min="1" max="60" value="10">
                     <div class="checkbox-group">
                         <div>
                             <label for="autoPauseEnableBtn">Pause when drawing:  </label>
@@ -44,6 +44,33 @@
                             <input type="checkbox" id="ageHeatmapEnableBtn">
                         </div>
                     </div>
+                    <br>
+                    <div class="pattern-selection">
+                        <div>
+                            <input type="radio" id="singleCellPatternBtn" name="pattern" value="single" checked>
+                            <label for="singleCellPatternBtn">Single Cell</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="gliderPatternBtn" name="pattern" value="glider">
+                            <label for="gliderPatternBtn">Glider</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="lightSpaceshipPatternBtn" name="pattern" value="lwss">
+                            <label for="lightSpaceshipPatternBtn">Light Spaceship</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="pulsarPatternBtn" name="pattern" value="pulsar">
+                            <label for="pulsarPatternBtn">Pulsar</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="gosperGliderGunPatternBtn" name="pattern" value="gosper_gun">
+                            <label for="gosperGliderGunPatternBtn">Gosper Glider Gun</label> 
+                        </div> 
+                        <div>
+                            <input type="radio" id="customPatternBtn" name="pattern" value="pentadecathlon">
+                            <label for="customPatternBtn">pentadecathlon</label>
+                        </div>
+                    </div>
                 </div>
             </aside>
         </div>
@@ -51,7 +78,7 @@
     </div>
     <footer>
         <div class="footer-info">
-            <b>Made by <a href="https://my-portfolio-beige-omega-35.vercel.app/" target="_blank" id="web-link">Eric Garcia</a></b>
+            <b>Made by <a href="https://ericgc.vercel.app/" target="_blank" id="web-link">Eric Garcia</a></b>
             <div class="link-icons">
                 <a href="https://github.com/nairec" target="_blank"><svg xmlns="http://www.w3.org/2000/svg" id="git-logo" class="link-icon" fill="currentColor" viewBox="0 0 256 256"><path d="M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.44-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68ZM200,112a40,40,0,0,1-40,40H112a40,40,0,0,1-40-40v-8a41.74,41.74,0,0,1,6.9-22.48A8,8,0,0,0,80,73.83a43.81,43.81,0,0,1,.79-33.58,43.88,43.88,0,0,1,32.32,20.06A8,8,0,0,0,119.82,64h32.35a8,8,0,0,0,6.74-3.69,43.87,43.87,0,0,1,32.32-20.06A43.81,43.81,0,0,1,192,73.83a8.09,8.09,0,0,0,1,7.65A41.72,41.72,0,0,1,200,104Z"></path></svg></a>
                 <a href="https://linkedin.com/in/eric-garcia-cano" target="_blank"><svg xmlns="http://www.w3.org/2000/svg" id="linkedIn-logo" class="link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-linkedin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 11v5" /><path d="M8 8v.01" /><path d="M12 16v-5" /><path d="M16 16v-3a2 2 0 1 0 -4 0" /><path d="M3 7a4 4 0 0 1 4 -4h10a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-10a4 4 0 0 1 -4 -4l0 -10" /></svg></a>
