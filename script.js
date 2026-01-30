@@ -63,6 +63,7 @@ const ctx = canvas.getContext('2d');
 
 const toggleSimulationButton = document.getElementById('toggleSimulation');
 const speedControl = document.getElementById('speedControl');
+const masterVolumeControl = document.getElementById('masterVolume')
 const autoPauseChck = document.getElementById('autoPauseEnableBtn');
 const linearInterpolationChck = document.getElementById('linearInterpolationEnableBtn');
 const cellGlowChck = document.getElementById('cellGlowEnableBtn');
@@ -81,8 +82,13 @@ let animationId;
 let step = 0;
 let frame = 0;
 let lastTimestamp = 0;
+let globalTimestamp = 0;
 let zoomFactor = 1;
+let deltaTime;
 let rect = canvas.getBoundingClientRect();
+let audioSmoothedDensity = 0;
+let smoothedBirths = 0;
+let lastAudioUpdateTime;
 
 let isRunning = false;
 let isSwiping = false;
@@ -90,6 +96,9 @@ let autoPauseEnabled = false;
 let enableLinearInterpolation = true;
 let enableAgeHeatmap = false;
 let wasRunningBeforeInteraction = false;
+let isAudioPlaying = false;
+let isAudioInitialized = false;
+let isAudioFadingIn = false;
 
 let selectedPattern = 'single';
 
@@ -107,8 +116,10 @@ let zoomInput = {
 
 let aliveCellsMap = new Map();
 let fps = parseInt(speedControl.value, 10);
+let masterVolume = parseInt(masterVolumeControl.value, 10);
 let interval = 1000 / fps;
 let aliveCells = 0;
+let lastFrameBirths = 0;
 
 ctx.imageSmoothingEnabled = false; // Disable anti-aliasing
 let width = canvas.width;
@@ -116,18 +127,37 @@ let height = canvas.height;
 
 const originalWidth = width;
 const originalHeight = height;
+const minLog = Math.log(0.05);
+const maxLog = Math.log(4);
 
 let imgData = ctx.createImageData(width, height);
 let data = imgData.data;
 
+// Audio setup
+let droneSynth;
+let droneFilter;
+let droneChorus;
+let droneReverb;
+let birthFx;
+
+// Event listeners
 window.addEventListener('resize', () => {
     rect = canvas.getBoundingClientRect();
 });
 
 toggleSimulationButton.addEventListener('click', () => {
+    startAudioEngine();
     isRunning = !isRunning;
     toggleSimulationButton.classList.toggle("playing", isRunning);
     toggleSimulationButton.blur();
+
+    if (isAudioInitialized) {
+        if (isRunning) {
+            Tone.Destination.volume.rampTo(masterVolume, 0.5);
+        } else {
+            Tone.Destination.volume.rampTo(-Infinity, 1.5);
+        }
+    }
     
     fpsLabel.textContent = isRunning ? `${fps}` : '0';
 });
@@ -137,6 +167,13 @@ speedControl.addEventListener('input', () => {
     interval = 1000 / fps;
     fpsLabel.textContent = isRunning ? `${fps}` : '0';
 });
+
+masterVolumeControl.addEventListener('input', () => {
+    masterVolume = parseInt(masterVolumeControl.value, 10);
+    if (isAudioInitialized) {
+        Tone.Destination.volume.rampTo(masterVolume, 0.1);
+    }
+})
 
 autoPauseChck.addEventListener('change', () => {
     autoPauseEnabled = autoPauseChck.checked;
@@ -210,11 +247,11 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('mousedown', (e) => {
 
     wasRunningBeforeInteraction = isRunning;
-
+    
     if (isRunning) {
         isRunning = false;
     }
-
+    
     mouseInput.isDown = (e.buttons === 1);
     mouseInput.intention = isAlive(mouseGridPos.x, mouseGridPos.y) ? 'ERASE' : 'DRAW';
     if (e.buttons === 2) {
@@ -223,6 +260,7 @@ canvas.addEventListener('mousedown', (e) => {
         firstSwipePos.y = mouseGridPos.y;
     }
     
+    startAudioEngine();
 });
 
 canvas.addEventListener('mouseleave', () => {
@@ -245,6 +283,114 @@ canvas.addEventListener('mouseup', () => {
     }
 });
 
+// Audio functions
+async function startAudioEngine() {
+    if (isAudioInitialized) return;
+    
+    Tone.context.lookAhead = 0.5;
+    await Tone.start(); 
+    initializeSynths(); 
+    isAudioInitialized = true;
+}
+
+function initializeSynths() {
+ 
+    createCyberpunkDrone();
+    
+    droneSynth.volume.value = -Infinity
+    droneSynth.start();
+
+    isAudioFadingIn = true;
+
+    droneSynth.volume.rampTo(-45, 2);
+    droneSynth.frequency.value = 40;
+
+    setTimeout(() => {
+        isAudioFadingIn = false;
+    }, 2000);
+}
+
+
+function createCyberpunkDrone() {
+
+    droneSynth = new Tone.FatOscillator({
+        type: "sawtooth",
+        count: 2,          
+        spread: 20         
+    });
+
+    birthFx = new Tone.Filter({
+        type: "peaking", 
+        frequency: 800,  
+        Q: 1,   
+        gain: 0   
+    });
+    
+    droneFilter = new Tone.Filter({
+        frequency: 400,
+        type: "lowpass",
+        rolloff: -24 
+    });
+    
+    droneChorus = new Tone.Chorus({
+        frequency: 0.5,
+        delayTime: 2.5,
+        depth: 0.7,   
+        wet: 0.5     
+    }).start(); 
+
+    droneReverb = new Tone.Freeverb({
+        roomSize: 0.9, 
+        dampening: 3000, 
+        wet: 0.5
+    });
+
+    panner = new Tone.Panner(0);
+
+    const limiter = new Tone.Limiter(-1).toDestination();
+    
+    droneSynth.chain(droneFilter, droneChorus, droneReverb, birthFx, panner, limiter);
+
+}
+
+function updateAudio(normZoomFactor, visibleCells, panningRatio) {
+    if (!droneFilter || (globalTimestamp - lastAudioUpdateTime) < 100) return;
+
+    lastAudioUpdateTime = globalTimestamp;
+    const rawDensity = Math.min((visibleCells * 2.0) / 5000, 1);
+    const reactionSpeed = 3.0; 
+    let step = reactionSpeed * deltaTime;
+    
+    if (step > 1) step = 1;
+
+    audioSmoothedDensity += (rawDensity - audioSmoothedDensity) * step;
+
+    const densityFreq = 200 + (audioSmoothedDensity * 4800);
+    const newFrequency = 200 + ( (densityFreq - 200) * normZoomFactor );        
+    droneFilter.frequency.setTargetAtTime(newFrequency, Tone.now(), 0.25); 
+    droneReverb.wet.setTargetAtTime((1-normZoomFactor), Tone.now(), 0.1);
+
+    if (!isAudioFadingIn) {
+        const targetVolume = -45 + (audioSmoothedDensity * 10) - ((1 - normZoomFactor) * 15);
+        droneSynth.volume.setTargetAtTime(targetVolume, Tone.now(), 0.2);
+    }
+
+    const rawBirthRate = Math.min(lastFrameBirths / 500, 1); 
+    
+    smoothedBirths += (rawBirthRate - smoothedBirths) * 0.05;
+
+    const boostGain = smoothedBirths * 20; 
+    const boostFreq = 800 + (smoothedBirths * 2000);
+    
+    birthFx.gain.setTargetAtTime(boostGain, Tone.now(), 0.1);
+    birthFx.frequency.setTargetAtTime(boostFreq, Tone.now(), 0.1);
+
+    panner.pan.setTargetAtTime(panningRatio, Tone.now(), 0.5);
+
+
+}
+
+// Other functions
 function paintOnMouse() {
     if (autoPauseEnabled) {
         pauseSim();
@@ -308,6 +454,11 @@ function processZoom() {
 function pauseSim() {
     toggleSimulationButton.classList.toggle("playing", isRunning);
     isRunning = false;
+
+    if (isAudioInitialized) {
+        Tone.Destination.volume.rampTo(-Infinity, 1.5);
+        console.log('pausing audio');
+    }
 }
 
 function isAlive(x, y) {
@@ -350,6 +501,8 @@ function getRotatedPattern(pattern) {
 
 // Spawns or highlights the selected pattern at the mouse position
 function drawPattern(drawMode, x, y) {
+    x = Math.floor(x);
+    y = Math.floor(y);
     if (drawMode === 'HIGHLIGHT') {
         for (const offset of currentGhost) {
             const cellX = x + offset.x;
@@ -378,6 +531,12 @@ function drawFrame() {
     if (zoomInput.hasZoom) {
         processZoom();
     }
+    
+    let rightCells = 0;
+    let leftCells = 0;
+    let visibleCells = 0;
+    let panningRatio;
+    let normalizedZoomFactor = (Math.log(zoomFactor) - minLog) / (maxLog - minLog);
 
     data.fill(0);
 
@@ -407,6 +566,9 @@ function drawFrame() {
         const x = Math.floor(worldX - camera.x);
         const y = Math.floor(worldY - camera.y);
         if (x >= 0 && x < width && y >= 0 && y < height) {
+
+            (x >= width / 2) ? rightCells++ : leftCells++;
+            
             const index = (y * width + x) * 4;
             if (enableAgeHeatmap) {
                 const age = values.age;
@@ -425,7 +587,14 @@ function drawFrame() {
 
     drawPattern('HIGHLIGHT', Math.floor(mouseGridPos.x - camera.x), Math.floor(mouseGridPos.y - camera.y));
 
+    visibleCells = leftCells + rightCells;
+    if (visibleCells == 0) panningRatio = 0;
+    else {
+        panningRatio = (rightCells - leftCells) / visibleCells * 0.8;
+    }
 
+    updateAudio(normalizedZoomFactor, visibleCells, panningRatio);
+    
     ctx.putImageData(imgData, 0, 0);
 
     // update variables for next frame
@@ -440,6 +609,7 @@ async function simLoop() {
     // Birth: 3 neighbors alive
     // Death: less than 2 or more than 3 neighbors alive
     // Survival: 2 or 3 neighbors alive
+    let frameBirths = 0;
     const newaliveCellsMap = new Map();
     const influenceMap = new Map();
     for (const [coordinates, values] of aliveCellsMap) {
@@ -464,6 +634,7 @@ async function simLoop() {
             const x = parseInt(parts[0]);
             const y = parseInt(parts[1]);
             newaliveCellsMap.set(coords, {x: x, y: y, age: 0});
+            frameBirths++;
         } else if (neighbors === 2 && aliveCellsMap.has(coords)){
             // Survival
             const oldCell = aliveCellsMap.get(coords);
@@ -472,11 +643,13 @@ async function simLoop() {
     }
     aliveCellsMap = newaliveCellsMap;
     aliveCells = newaliveCellsMap.size;
+    lastFrameBirths = frameBirths;
 }
 
 async function mainLoop(timestamp) {
 
-    const deltaTime = timestamp - lastTimestamp;
+    globalTimestamp = timestamp;
+    deltaTime = timestamp - lastTimestamp;
     if (deltaTime >= interval && isRunning) {
         await simLoop();
         lastTimestamp = timestamp - (deltaTime % interval);

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/tone"></script>
     <title>LightConway</title>
 </head>
 <body>
@@ -26,6 +27,8 @@
                 <div class="control-group">
                     <label for="speedControl">Simulation Speed:</label>
                     <input type="range" id="speedControl" min="1" max="60" value="10">
+                    <label for="masterVolume">Master Volume:</label>
+                    <input type="range" id="masterVolume" min="-10" max="10" value="0">
                     <div class="checkbox-group">
                         <div>
                             <label for="autoPauseEnableBtn">Pause when drawing:  </label>
@@ -67,8 +70,12 @@
                             <label for="gosperGliderGunPatternBtn">Gosper Glider Gun</label> 
                         </div> 
                         <div>
-                            <input type="radio" id="customPatternBtn" name="pattern" value="pentadecathlon">
-                            <label for="customPatternBtn">pentadecathlon</label>
+                            <input type="radio" id="pentadecathlonPatternBtn" name="pattern" value="pentadecathlon">
+                            <label for="pentadecathlonPatternBtn">Pentadecathlon</label>
+                        </div>
+                         <div>
+                            <input type="radio" id="diehardPatternBtn" name="pattern" value="diehard">
+                            <label for="diehardPatternBtn">Diehard</label>
                         </div>
                     </div>
                 </div>
