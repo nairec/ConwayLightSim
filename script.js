@@ -1,62 +1,3 @@
-const GLIDER = [{x: 0, y: -1}, {x: 1, y: 0}, {x: -1, y: 1}, {x: 0, y: 1}, {x: 1, y: 1}];
-const LWSS = [
-    {x: -2, y: -2}, {x: 1, y: -2},
-    {x: 2, y: -1},
-    {x: -2, y: 0}, {x: 2, y: 0},
-    {x: -1, y: 1}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 2, y: 1}
-];
-const PULSAR = [
-    {x: -2, y: -1}, {x: -3, y: -1}, {x: -4, y: -1},
-    {x: -1, y: -2}, {x: -1, y: -3}, {x: -1, y: -4},
-    {x: -6, y: -2}, {x: -6, y: -3}, {x: -6, y: -4},
-    {x: -2, y: -6}, {x: -3, y: -6}, {x: -4, y: -6},
-    
-    {x: 2, y: -1}, {x: 3, y: -1}, {x: 4, y: -1},
-    {x: 1, y: -2}, {x: 1, y: -3}, {x: 1, y: -4},
-    {x: 6, y: -2}, {x: 6, y: -3}, {x: 6, y: -4},
-    {x: 2, y: -6}, {x: 3, y: -6}, {x: 4, y: -6},
-
-    {x: -2, y: 1}, {x: -3, y: 1}, {x: -4, y: 1},
-    {x: -1, y: 2}, {x: -1, y: 3}, {x: -1, y: 4},
-    {x: -6, y: 2}, {x: -6, y: 3}, {x: -6, y: 4},
-    {x: -2, y: 6}, {x: -3, y: 6}, {x: -4, y: 6},
-
-    {x: 2, y: 1}, {x: 3, y: 1}, {x: 4, y: 1},
-    {x: 1, y: 2}, {x: 1, y: 3}, {x: 1, y: 4},
-    {x: 6, y: 2}, {x: 6, y: 3}, {x: 6, y: 4},
-    {x: 2, y: 6}, {x: 3, y: 6}, {x: 4, y: 6}
-];
-const DIEHARD = [
-    {x: -3, y: 0}, {x: -2, y: 0}, {x: -2, y: 1}, 
-    {x: 2, y: 1}, {x: 3, y: 1}, {x: 4, y: 1}, 
-    {x: 3, y: -1}
-];
-const PENTADECATHLON = [
-    {x: 0, y: -5}, {x: 0, y: -4}, 
-    {x: 0, y: -2}, {x: 0, y: -1}, {x: 0, y: 0}, {x: 0, y: 1}, 
-    {x: 0, y: 3}, {x: 0, y: 4}
-];
-const GOSPER_GUN = [
-    {x: -17, y: -1}, {x: -17, y: 0}, {x: -16, y: -1}, {x: -16, y: 0},
-
-    {x: -7, y: -1}, {x: -7, y: 0}, {x: -7, y: 1},
-    {x: -6, y: -2}, {x: -6, y: 2},
-    {x: -5, y: -3}, {x: -5, y: 3},
-    {x: -4, y: -3}, {x: -4, y: 3},
-    {x: -3, y: 0},
-    {x: -2, y: -2}, {x: -2, y: 2},
-    {x: -1, y: -1}, {x: -1, y: 0}, {x: -1, y: 1},
-    {x: 0, y: 0},
-
-    {x: 3, y: -3}, {x: 3, y: -2}, {x: 3, y: -1},
-    {x: 4, y: -3}, {x: 4, y: -2}, {x: 4, y: -1},
-    {x: 5, y: -4}, {x: 5, y: 0},
-    {x: 7, y: -5}, {x: 7, y: -4}, {x: 7, y: 0}, {x: 7, y: 1},
-
-    {x: 17, y: -3}, {x: 17, y: -2}, {x: 18, y: -3}, {x: 18, y: -2}
-];
-const PATTERNMAPPING = {'single': [{x:0, y:0}], 'glider': GLIDER, 'lwss': LWSS, 'pulsar': PULSAR, 'diehard': DIEHARD, 'pentadecathlon': PENTADECATHLON, 'gosper_gun': GOSPER_GUN};
-let currentGhost = PATTERNMAPPING['single'];
 
 const canvas = document.getElementById('simulationCanvas');
 const ctx = canvas.getContext('2d');
@@ -101,6 +42,7 @@ let isAudioInitialized = false;
 let isAudioFadingIn = false;
 
 let selectedPattern = 'single';
+let currentGhost = PATTERNMAPPING['single'];
 
 let mouseInput = { x: -1, y: -1, isDown: false, intention: 'DRAW' };
 let mouseGridPos = { x: -1, y: -1 };
@@ -129,6 +71,8 @@ const originalWidth = width;
 const originalHeight = height;
 const minLog = Math.log(0.05);
 const maxLog = Math.log(4);
+const SHIFT = 32n;
+const Y_MASK = 0xFFFFFFFFn;
 
 let imgData = ctx.createImageData(width, height);
 let data = imgData.data;
@@ -153,7 +97,7 @@ toggleSimulationButton.addEventListener('click', () => {
 
     if (isAudioInitialized) {
         if (isRunning) {
-            Tone.Destination.volume.rampTo(masterVolume, 0.5);
+            Tone.Destination.volume.rampToh &(masterVolume, 0.5);
         } else {
             Tone.Destination.volume.rampTo(-Infinity, 1.5);
         }
@@ -282,6 +226,23 @@ canvas.addEventListener('mouseup', () => {
         wasRunningBeforeInteraction = false;
     }
 });
+
+// Hashing functions for cell coordinates
+function getHash(x, y) {
+    return (BigInt(x) << SHIFT) | (BigInt(y) & Y_MASK);
+}
+
+function getCoordsFromHash(hash) {
+    const x = Number(hash >> SHIFT);
+    
+    let y = Number(hash & Y_MASK);
+    
+    if (y > 0x7FFFFFFF) {
+        y -= 0x100000000; 
+    }
+
+    return { x, y };
+}
 
 // Audio functions
 async function startAudioEngine() {
@@ -462,7 +423,7 @@ function pauseSim() {
 }
 
 function isAlive(x, y) {
-    if (aliveCellsMap.has(`${x},${y}`)) {
+    if (aliveCellsMap.has(getHash(x, y))) {
         return 1;
     } else {
         return 0;
@@ -481,12 +442,13 @@ function countAliveNeighbors(x, y) {
 }
 
 function cellAction(x, y, intention) {
+    let hash = getHash(x, y);
     if (intention === 'ERASE') {
-        aliveCellsMap.delete(`${x},${y}`);
+        aliveCellsMap.delete(hash);
         aliveCells--;
     } else {
-        if (!aliveCellsMap.has(`${x},${y}`)) {
-            aliveCellsMap.set(`${x},${y}`, {x: x, y: y, age: 0});
+        if (!aliveCellsMap.has(hash)) {
+            aliveCellsMap.set(hash, {x: x, y: y, age: 0});
             aliveCells++;
         }
     }
@@ -546,9 +508,9 @@ function drawFrame() {
     
     // Update HUD
     coordLabel.innerText = `${mouseGridPos.x}, ${mouseGridPos.y}`;
-    const cellAlive = aliveCellsMap.has(`${mouseGridPos.x},${mouseGridPos.y}`);
+    const cellAlive = aliveCellsMap.has(getHash(mouseGridPos.x, mouseGridPos.y));
     stateLabel.innerText = cellAlive ? 'alive' : 'dead';
-    ageLabel.innerText = cellAlive ? `${aliveCellsMap.get(`${mouseGridPos.x},${mouseGridPos.y}`).age}` : '-';
+    ageLabel.innerText = cellAlive ? `${aliveCellsMap.get(getHash(mouseGridPos.x, mouseGridPos.y)).age}` : '-';
 
     // handle events
     if (mouseInput.isDown) {
@@ -620,25 +582,23 @@ async function simLoop() {
                 if (dx === 0 && dy === 0) continue; // Skip the cell itself
                 const nx = cellX + dx;
                 const ny = cellY + dy;
-                const neighborKey = `${nx},${ny}`
+                const neighborHash = getHash(nx, ny);
 
-                const neighbors = influenceMap.get(neighborKey) || 0;
-                influenceMap.set(neighborKey, neighbors + 1);
+                const neighbors = influenceMap.get(neighborHash) || 0;
+                influenceMap.set(neighborHash, neighbors + 1);
             }
         }
     }
-    for (const [coords, neighbors] of influenceMap) {
+    for (const [hash, neighbors] of influenceMap) {
         if (neighbors === 3) {
             // Birth
-            const parts = coords.split(','); 
-            const x = parseInt(parts[0]);
-            const y = parseInt(parts[1]);
-            newaliveCellsMap.set(coords, {x: x, y: y, age: 0});
+            const {x, y} = getCoordsFromHash(hash);
+            newaliveCellsMap.set(hash, {x: x, y: y, age: 0});
             frameBirths++;
-        } else if (neighbors === 2 && aliveCellsMap.has(coords)){
+        } else if (neighbors === 2 && aliveCellsMap.has(hash)){
             // Survival
-            const oldCell = aliveCellsMap.get(coords);
-            newaliveCellsMap.set(coords, {...oldCell, age: oldCell.age + 1});
+            const oldCell = aliveCellsMap.get(hash);
+            newaliveCellsMap.set(hash, {...oldCell, age: oldCell.age + 1});
         }
     }
     aliveCellsMap = newaliveCellsMap;
