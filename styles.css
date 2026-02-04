@@ -3,6 +3,7 @@
 body {
     background: #000000;
     font-family: Rajdhani, sans-serif;
+    overflow-y: hidden;
 }
 
 #simulationCanvas {
@@ -23,6 +24,99 @@ body {
     pointer-events: none;
 }
 
+.state-options {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 12rem;
+    align-items: center;
+    pointer-events: none;
+}
+
+.state-btn {
+    background-color: rgba(0, 15, 34, 0.541);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    pointer-events: auto;
+    border-radius: 8px;
+    border: none;
+}
+
+#load-file-icon {
+    color: #CAB67F;
+    width: 40px;
+    height: 40px;
+}
+
+#save-file-icon {
+    color: #CAB67F;
+    width: 40px;
+    height: 40px;
+}
+
+.state-btn:active {
+    outline: 2px solid #CAB67F;
+}
+
+.state-btn:hover {
+    cursor: pointer;
+    background-color: rgba(0, 35, 80, 0.541);
+}
+
+#input-file-popup {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    top: 110%;
+    left: 40%;
+    width: fit-content;
+    height: 5rem;
+    padding: 1rem;
+    border-radius: 18px;
+    background-color: rgba(0, 48, 110, 0.541);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    color: #CAB67F;
+    pointer-events: auto;
+    transition: all 0.3s ease-in-out;
+}
+
+#close-file-popup-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+}
+
+#close-file-popup-icon {
+    width: 20px;
+    height: 20px;
+    color: #CAB67F;
+}
+
+#hide-hud-icon {
+    display: inline;
+    width: 40px;
+    height: 40px;
+    color: #CAB67F;
+}
+
+#show-hud-icon {
+    display: none;
+    width: 40px;
+    height: 40px;
+    color: #CAB67F;
+}
+
 .right-panel {
     display: flex;
     flex-direction: column;
@@ -39,7 +133,7 @@ body {
     height: fit-content;
     justify-content: center;
     align-items: center;
-    gap: 2rem;
+    gap: 1rem;
 }
 
 .control-group {
@@ -55,6 +149,10 @@ body {
     align-items: center;
     gap: 0.5rem;
     pointer-events: auto;
+}
+
+.pattern-selection label {
+    font-size: 1rem;
 }
 
 .metadata-group {
@@ -115,7 +213,7 @@ footer {
     width: 90%;
     padding: 20px 20px 20px 30px;
     position: absolute;
-    bottom: 1rem;
+    bottom: .5rem;
     pointer-events: none;
 }
 

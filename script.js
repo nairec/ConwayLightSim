@@ -2,6 +2,11 @@
 const canvas = document.getElementById('simulationCanvas');
 const ctx = canvas.getContext('2d');
 
+const loadFileButton = document.getElementById('load-file-btn');
+const fileInput = document.getElementById('file-input');
+const closeFilePopupButton = document.getElementById('close-file-popup-btn');
+const saveFileButton = document.getElementById('save-file-btn');
+const toggleHudButton = document.getElementById('toggle-hud-btn');
 const toggleSimulationButton = document.getElementById('toggleSimulation');
 const speedControl = document.getElementById('speedControl');
 const masterVolumeControl = document.getElementById('masterVolume')
@@ -18,6 +23,7 @@ const coordLabel = document.getElementById('coordinates-label');
 const zoomLabel = document.getElementById('zoom-label');
 const stateLabel = document.getElementById('state-label');
 const ageLabel = document.getElementById('age-label');
+const inputFilePopup = document.getElementById('input-file-popup');
 
 let animationId;
 let step = 0;
@@ -40,6 +46,8 @@ let wasRunningBeforeInteraction = false;
 let isAudioPlaying = false;
 let isAudioInitialized = false;
 let isAudioFadingIn = false;
+let isFileInputOpen = false;
+let showHud = true;
 
 let selectedPattern = 'single';
 let currentGhost = PATTERNMAPPING['single'];
@@ -87,6 +95,77 @@ let birthFx;
 // Event listeners
 window.addEventListener('resize', () => {
     rect = canvas.getBoundingClientRect();
+});
+
+loadFileButton.addEventListener('click', () => {
+    loadFileButton.blur();
+    isFileInputOpen = !isFileInputOpen;
+    if (isFileInputOpen) {
+        inputFilePopup.style.top = '40%';
+    } else {
+        inputFilePopup.style.top = '110%';
+
+    }
+})
+
+fileInput.addEventListener('change', () => {
+    fileInput.blur();
+    const selectedFile = fileInput.files[0];
+    if (!selectedFile.name.endsWith('.rle')) {
+        alert("The selected file does not seem to be a .rle file!");
+    } else {
+        const reader = new FileReader();
+        let fileText = '';
+        try {
+            reader.onload = function () {
+                fileText += reader.result;
+                let parsedCells = parseRLE(fileText);
+                loadFromParsed(aliveCellsMap, parsedCells);
+                loadFileButton.click();
+            }
+            reader.readAsText(selectedFile);  
+        } catch (error) {
+            console.error(error);
+        }
+    }
+})
+
+closeFilePopupButton.addEventListener('click', () => {
+    loadFileButton.click();
+});
+
+
+saveFileButton.addEventListener('click', () => {
+    saveFileButton.blur();
+    const rleData = saveStateAsRLE(aliveCellsMap);
+    const blob = new Blob([rleData], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'conway_pattern.rle';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
+
+toggleHudButton.addEventListener('click', () => {
+    toggleHudButton.blur();
+    showHud = !showHud;
+    if (showHud) {
+        document.getElementById('hide-hud-icon').style.display = 'inline';
+        document.getElementById('show-hud-icon').style.display = 'none';
+        document.querySelector('.metadata-group').style.display = 'flex';
+        document.querySelector('.right-panel').style.display = 'flex';
+        document.querySelector('.footer-info').style.display = 'flex';
+    } else {
+        document.getElementById('hide-hud-icon').style.display = 'none';
+        document.getElementById('show-hud-icon').style.display = 'inline';
+        document.querySelector('.metadata-group').style.display = 'none';
+        document.querySelector('.right-panel').style.display = 'none';
+        document.querySelector('.footer-info').style.display = 'none';
+    }
 });
 
 toggleSimulationButton.addEventListener('click', () => {
@@ -256,7 +335,7 @@ async function startAudioEngine() {
 
 function initializeSynths() {
  
-    createCyberpunkDrone();
+    createDrone();
     
     droneSynth.volume.value = -Infinity
     droneSynth.start();
@@ -272,7 +351,7 @@ function initializeSynths() {
 }
 
 
-function createCyberpunkDrone() {
+function createDrone() {
 
     droneSynth = new Tone.FatOscillator({
         type: "sawtooth",
@@ -326,13 +405,13 @@ function updateAudio(normZoomFactor, visibleCells, panningRatio) {
 
     audioSmoothedDensity += (rawDensity - audioSmoothedDensity) * step;
 
-    const densityFreq = 200 + (audioSmoothedDensity * 4800);
-    const newFrequency = 200 + ( (densityFreq - 200) * normZoomFactor );        
+    const densityFreq = 350 + (audioSmoothedDensity * 4800);
+    const newFrequency = 350 + ( (densityFreq - 200) * normZoomFactor );        
     droneFilter.frequency.setTargetAtTime(newFrequency, Tone.now(), 0.25); 
     droneReverb.wet.setTargetAtTime((1-normZoomFactor), Tone.now(), 0.1);
 
     if (!isAudioFadingIn) {
-        const targetVolume = -45 + (audioSmoothedDensity * 10) - ((1 - normZoomFactor) * 15);
+        const targetVolume = -45 + (audioSmoothedDensity * 10) - ((1 - normZoomFactor) * 5);
         droneSynth.volume.setTargetAtTime(targetVolume, Tone.now(), 0.2);
     }
 
@@ -418,7 +497,6 @@ function pauseSim() {
 
     if (isAudioInitialized) {
         Tone.Destination.volume.rampTo(-Infinity, 1.5);
-        console.log('pausing audio');
     }
 }
 

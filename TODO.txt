@@ -1,5 +1,4 @@
 TOP PRIORITY:
 MEDIUM PRIORITY:
-    - Line interpolation
-
 LOW PRIORITY:
+    - Add more patterns to the stamp palette
