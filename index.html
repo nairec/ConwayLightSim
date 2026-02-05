@@ -46,10 +46,12 @@
                 </button>
                 <div class="control-group">
                     <h3>Configurations</h3>
-                    <label for="speedControl">Simulation Speed:</label>
-                    <input type="range" id="speedControl" min="1" max="60" value="10">
-                    <label for="masterVolume">Master Volume:</label>
-                    <input type="range" id="masterVolume" min="-10" max="10" value="0">
+                    <div class="slider-group">
+                        <label for="speedControl">Simulation Speed:</label>
+                        <input type="range" id="speedControl" min="1" max="60" value="10">
+                        <label for="masterVolume">Master Volume:</label>
+                        <input type="range" id="masterVolume" min="-10" max="10" value="0">
+                    </div>
                     <div class="checkbox-group">
                         <div>
                             <label for="autoPauseEnableBtn">Pause when drawing:  </label>

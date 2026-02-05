@@ -164,6 +164,8 @@ body {
     text-shadow: 0 0 5px black, 
              0 0 10px black, 
              0 0 15px black;
+    padding: 0;
+    height: 1.5rem;
 }
 
 .main-content {
@@ -203,6 +205,106 @@ body {
     display: flex;
     flex-direction: column;
     margin-top: 10px;
+}
+
+.slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    align-items: center;
+}
+
+#speedControl, #masterVolume {
+    -webkit-appearance: none;
+    width: 60%;
+    height: 5px;
+    background: #000;
+    outline: none;
+    border: 5px solid #CAB67F;
+    border-radius: 8px;
+}
+
+#speedControl::-webkit-slider-thumb, #masterVolume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 30px;
+    background: #000;
+    cursor: pointer;
+    border: 3px solid #CAB67F;
+    border-radius: 4px;
+}
+
+input[type="checkbox"] {
+    appearance: none;
+    background-color: transparent;
+    margin: 0;
+    font: inherit;
+    color: currentColor;
+    width: 1em;
+    height: 1em;
+    border: 0.15em solid currentColor;
+    border-radius: 0.15em;
+    transform: translateY(0.2rem);
+    display: inline-grid;
+    place-content: center;
+    position: relative;
+}
+
+input[type="checkbox"]::before {
+    content: "";
+    width: 0.6em;
+    height: 0.6em;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transform-origin: center;
+    transition: transform 180ms ease-in-out;
+
+    background-color: var(--form-control-color, currentColor);
+    border-radius: 0.08em;
+    z-index: 1;
+}
+
+input[type="checkbox"]:checked::before {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+input[type="radio"] {
+    appearance: none;
+    background-color: transparent;
+    margin: 0;
+    font: inherit;
+    color: currentColor;
+    width: 1em;
+    height: 1em;
+    border: 0.15em solid currentColor;
+    border-radius: 50%;
+    transform: translateY(0.2rem);
+    display: inline-grid;
+    place-content: center;
+    position: relative;
+}
+
+input[type="radio"]::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.45em;
+    height: 0.45em;
+    transform: translate(-50%, -50%) scale(0);
+    transform-origin: center;
+    transition: transform 140ms ease-in-out;
+    background-color: var(--form-control-color, currentColor);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+input[type="radio"]:checked::before {
+    transform: translate(-50%, -50%) scale(1);
 }
 
 footer {
