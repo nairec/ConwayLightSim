@@ -68,8 +68,8 @@ function centerCameraOnPattern(minX, maxX, minY, maxY) {
     const patternCenterX = (minX + maxX) / 2;
     const patternCenterY = (minY + maxY) / 2;
 
-    camera.x = patternCenterX - (width / 2); 
-    camera.y = patternCenterY - (height / 2);
+    targetCamera.x = patternCenterX - (width / 2); 
+    targetCamera.y = patternCenterY - (height / 2);
 }
 
 function saveStateAsRLE(aliveCellsMap) {

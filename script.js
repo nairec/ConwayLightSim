@@ -30,7 +30,8 @@ let step = 0;
 let frame = 0;
 let lastTimestamp = 0;
 let globalTimestamp = 0;
-let zoomFactor = 1;
+let currentZoomFactor = 1;
+let targetZoomFactor = 1;
 let deltaTime;
 let rect = canvas.getBoundingClientRect();
 let audioSmoothedDensity = 0;
@@ -52,11 +53,14 @@ let showHud = true;
 let selectedPattern = 'single';
 let currentGhost = PATTERNMAPPING['single'];
 
+let rawMousePos ={x: -1, y: -1};
 let mouseInput = { x: -1, y: -1, isDown: false, intention: 'DRAW' };
+let lastMouseInput = {x: -1, y: -1};
 let mouseGridPos = { x: -1, y: -1 };
 let lastMouseGridPos = { x: -1, y: -1 };
 let firstSwipePos = { x: -1, y: -1 };
 let camera = {x: 0, y: 0};
+let targetCamera = {x: 0, y: 0}
 let zoomInput = {
     hasZoom: false,
     deltaY: 0,
@@ -258,6 +262,9 @@ canvas.addEventListener('wheel', (e) => {
 // Mouse tracking inside the canvas
 canvas.addEventListener('mousemove', (e) => {
 
+    rawMousePos.x = e.clientX;
+    rawMousePos.y = e.clientY;
+
     const scaleX = width / rect.width;
     const scaleY = height / rect.height;
 
@@ -456,39 +463,61 @@ function paintOnMouse() {
 
 function processZoom() {
 
-    let scaleX = width / rect.width;  
-    let scaleY = height / rect.height;
+    rect = canvas.getBoundingClientRect();
 
-    const worldX = camera.x + (zoomInput.zoomX - rect.left) * scaleX;
-    const worldY = camera.y + (zoomInput.zoomY - rect.top) * scaleY;
+    // input
+    if (zoomInput.hasZoom) {
 
-    zoomFactor *= (1 + zoomInput.deltaY * -0.0005);
-    zoomFactor = Math.min(Math.max(0.05, zoomFactor), 4);
+        let targetScaleX = (originalWidth / targetZoomFactor) / rect.width;
+        let targetScaleY = (originalHeight / targetZoomFactor) / rect.height;
 
-    canvas.width = Math.floor(originalWidth / zoomFactor);
-    canvas.height = Math.floor(originalHeight / zoomFactor);
+        const mouseWorldX = targetCamera.x + (zoomInput.zoomX - rect.left) * targetScaleX;
+        const mouseWorldY = targetCamera.y + (zoomInput.zoomY - rect.top) * targetScaleY;
+
+        targetZoomFactor *= (1 + zoomInput.deltaY * -0.0005);
+        targetZoomFactor = Math.min(Math.max(0.05, targetZoomFactor), 4);
+        
+        let newTargetScaleX = (originalWidth / targetZoomFactor) / rect.width;
+        let newTargetScaleY = (originalHeight / targetZoomFactor) / rect.height;
+
+        targetCamera.x = mouseWorldX - (zoomInput.zoomX - rect.left) * newTargetScaleX;
+        targetCamera.y = mouseWorldY - (zoomInput.zoomY - rect.top) * newTargetScaleY;
+
+        zoomInput.hasZoom = false;
+        zoomInput.deltaY = 0;
+    }
+
+    // Interpolation
+    
+    const lerpSpeed = 0.30;
+
+    if (Math.abs(targetZoomFactor - currentZoomFactor) < 0.001 && 
+        Math.abs(targetCamera.x - camera.x) < 0.1) {
+            currentZoomFactor = targetZoomFactor;
+            camera.x = targetCamera.x;
+            camera.y = targetCamera.y;
+    } else {
+        currentZoomFactor += (targetZoomFactor - currentZoomFactor) * lerpSpeed;
+        camera.x += (targetCamera.x - camera.x) * lerpSpeed;
+        camera.y += (targetCamera.y - camera.y) * lerpSpeed;
+    }
+
+    // Render
+
+    canvas.width = Math.floor(originalWidth / currentZoomFactor) & ~1;
+    canvas.height = Math.floor(originalHeight / currentZoomFactor) & ~1;
     width = canvas.width;
     height = canvas.height;
     
     imgData = ctx.createImageData(width, height);
     data = imgData.data;
 
-    scaleX = width / rect.width;  
-    scaleY = height / rect.height;
-
-    camera.x = worldX - ((zoomInput.zoomX - rect.left) * scaleX);
-    camera.y = worldY - ((zoomInput.zoomY - rect.top) * scaleY);
+    zoomLabel.innerText = `${currentZoomFactor.toFixed(2)}x`;
     
-    zoomLabel.innerText = `${zoomFactor.toFixed(2)}x`;
-
-    scaleX = width / rect.width;
-    scaleY = height / rect.height;
-
-    mouseInput.x = (zoomInput.zoomX - rect.left) * scaleX;
-    mouseInput.y = (zoomInput.zoomY - rect.top) * scaleY;
-
-    zoomInput.hasZoom = false;
-    zoomInput.deltaY = 0;
+    let currentScaleX = width / rect.width;
+    let currentScaleY = height / rect.height;
+    mouseInput.x = (rawMousePos.x - rect.left) * currentScaleX;
+    mouseInput.y = (rawMousePos.y - rect.top) * currentScaleY;
 }
 
 function pauseSim() {
@@ -568,15 +597,13 @@ function drawPattern(drawMode, x, y) {
 function drawFrame() {
 
     // handle zooming
-    if (zoomInput.hasZoom) {
-        processZoom();
-    }
-    
+    processZoom();
+
     let rightCells = 0;
     let leftCells = 0;
     let visibleCells = 0;
     let panningRatio;
-    let normalizedZoomFactor = (Math.log(zoomFactor) - minLog) / (maxLog - minLog);
+    let normalizedZoomFactor = (Math.log(currentZoomFactor) - minLog) / (maxLog - minLog);
 
     data.fill(0);
 
@@ -595,16 +622,24 @@ function drawFrame() {
         paintOnMouse();
     }
     if (isSwiping) {
-        camera.x -= (mouseGridPos.x - firstSwipePos.x);
-        camera.y -= (mouseGridPos.y - firstSwipePos.y);
+        const deltaX = mouseInput.x - lastMouseInput.x;
+        const deltaY = mouseInput.y - lastMouseInput.y;
+
+        targetCamera.x -= deltaX;
+        targetCamera.y -= deltaY;
+        
+        camera.x = targetCamera.x;
+        camera.y = targetCamera.y;
     }
     
+    const camX = Math.floor(camera.x);
+    const camY = Math.floor(camera.y);
     // Paint the canvas
     for (const [coords, values] of aliveCellsMap) {
         const worldX = values.x;
         const worldY = values.y;
-        const x = Math.floor(worldX - camera.x);
-        const y = Math.floor(worldY - camera.y);
+        const x = worldX - camX;
+        const y = worldY - camY;
         if (x >= 0 && x < width && y >= 0 && y < height) {
 
             (x >= width / 2) ? rightCells++ : leftCells++;
@@ -640,6 +675,11 @@ function drawFrame() {
     // update variables for next frame
     lastMouseGridPos.x = mouseGridPos.x;
     lastMouseGridPos.y = mouseGridPos.y;
+    frame++;
+
+    lastMouseInput.x = mouseInput.x;
+    lastMouseInput.y = mouseInput.y;
+    
     frame++;
 
 }
