@@ -4,10 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
+    <title>LightConway</title>
+
+    <script>
+        function isMobile() {
+            const regex = /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+            return regex.test(navigator.userAgent) || window.innerWidth < 1024;
+        }
+
+        if (isMobile()) {
+            document.addEventListener("DOMContentLoaded", function() {
+                document.body.innerHTML = `
+                <div style="
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                    ">
+                    <div style="
+                        display: flex; 
+                        flex-direction: column; 
+                        justify-content: center; 
+                        align-items: center;
+                        height: 30vh; 
+                        background: #ffd59e3b; 
+                        backdrop-filter: blur(10px);
+                        color: white; 
+                        font-family: sans-serif;
+                        text-align: center;
+                        padding: 20px;
+                        border-radius: 10px;
+                    ">
+                        <h1>⚠️ Only desktop</h1>
+                        <p>This simulation requires a moderate computational power and precise mouse controls.</p>
+                        <p>Please open this website on a computer :).</p>
+                    </div>
+                </div>
+                `;
+                throw new Error("Mobile access blocked intentionally");
+            });
+        }
+    </script>
+
     <script src="https://unpkg.com/tone"></script>
     <script src="patterns.js"></script>
     <script src="parser.js"></script>
-    <title>LightConway</title>
 </head>
 <body>
     <div class="main-content">
